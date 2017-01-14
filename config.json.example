@@ -1,0 +1,13 @@
+{
+	"awsAccessKeyId": "",
+	"awsSecretAccessKey": "",
+	"awsSesRegion": "",
+
+	"pgHostname": "localhost",
+	"pgUsername": "rolodex",
+	"pgPassword": "rolodex",
+	"pgDatabase": "rolodex",
+
+	"batchSize": 5,
+	"numBatches": 1
+}
