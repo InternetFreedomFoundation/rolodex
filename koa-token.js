@@ -18,28 +18,20 @@
 */
 
 /*
-	index.js - Koa webserver
+	koa-token.js - Koa authentication middleware using token.js
 */
 
 const
-	config = require('./config'),
-	app = require('koa')(),
-	route = require('koa-route'),
-	api = require('./routes');
+	{ decode } = require('./token');
 
-app.use(require('koa-logger')());
-require('koa-qs')(app, 'first');
+module.exports = function (key) {
+	return function * (next) {
+		try {
+			if (this.query.e) this.query.email = decode(this.query.e, key);
+		} catch (e) {
+			this.status = 401;
+		}
 
-app.use(require('./koa-token')(config.key));
-
-app.use(route.get('/unsubscribe', api.unsubscribe));
-app.use(route.get('/bounce', api.bounce));
-app.use(route.get('/complaint', api.complaint));
-app.use(route.get('/open', api.open));
-app.use(route.get('/click', api.click));
-
-app.use(require('koa-static')(
-	require('path').join(__dirname, 'public')
-));
-
-app.listen(3000);
+		yield next;
+	}
+}

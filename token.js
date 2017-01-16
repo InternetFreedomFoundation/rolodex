@@ -31,6 +31,10 @@
 const
 	crypto = require('crypto');
 
+function expiry(days) {
+	return Math.round(new Date(Date.now() + days * 86.4E6).getTime() / 1000);
+}
+
 function encode(sub, exp, key) {
 	const
 		msg = Buffer.concat([
@@ -53,23 +57,23 @@ function decode(enc, key) {
 		msg = Buffer.concat([
 			decipher.update(cip, 'base64'),
 			decipher.final()
-		]);
+		]),
+		exp = msg.readUInt32BE(0),
+		sub = msg.toString('utf8', 4);
 
-	return {
-		exp: msg.readUInt32BE(0),
-		sub: msg.toString('utf8', 4)
-	}
+	if (exp < expiry(0)) throw(Error('Token expired'));
 
+	return sub;
 }
 
+exports.encode = encode;
+exports.decode = decode;
 
-
-//
 // let
-// 	sub = 'thisisalongemailaddresswithmanypieces@gmail.com',
-// 	exp = Math.round(new Date(Date.now() + 30 * 86.4E6).getTime() / 1000),
+// 	sub = 'aravindet@gmail.com',
+// 	exp = expiry(30),
 // 	key = 'hush, this is a secret',
 // 	enc = encode(sub, exp, key),
 // 	dec = decode(enc, key);
 //
-// console.log(enc.length, enc, dec.sub === sub && dec.exp === exp);
+// console.log(enc.length, enc, dec === sub);
