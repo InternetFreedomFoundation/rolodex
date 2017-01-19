@@ -55,8 +55,8 @@ function encode(sub, days, key) {
 function decode(enc, key) {
 	const
 		[ cip, tag ] = enc.split('.'),
-		decipher = crypto.createDecipher('aes-256-gcm', key)
-			.setAuthTag(Buffer.from(tag, 'base64')),
+		decipher = crypto.createDecipher('aes-256-gcm', key);
+		decipher.setAuthTag(Buffer.from(tag, 'base64')),
 		msg = Buffer.concat([
 			decipher.update(cip, 'base64'),
 			decipher.final()
