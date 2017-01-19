@@ -1,4 +1,9 @@
 {
+	"env": "dev",
+	"devMailTo": "me@example.com",
+
+	"origin": "https://rolodex.example.com",
+
 	"awsAccessKeyId": "",
 	"awsSecretAccessKey": "",
 	"awsSesRegion": "",
@@ -9,5 +14,7 @@
 	"pgDatabase": "rolodex",
 
 	"batchSize": 5,
-	"numBatches": 1
+	"numBatches": 1,
+
+	"tokenKey": "hush, this is a secret"
 }

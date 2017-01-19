@@ -18,28 +18,28 @@
 */
 
 /*
-	index.js - Koa webserver
+	index.js - Webserver
 */
 
 const
 	config = require('./config'),
-	app = require('koa')(),
-	route = require('koa-route'),
-	api = require('./routes');
+	express = require('express'),
+	expressHandlebars = require('express-handlebars'),
+	app = express(),
+	routes = require('./routes'),
+	{ decode } = require('./token');
 
-app.use(require('koa-logger')());
-require('koa-qs')(app, 'first');
+app.engine('hbs', expressHandlebars());
+app.set('view engine', 'hbs');
 
-app.use(require('./koa-token')(config.key));
+app.use((req, res, next) => {
+	if (req.query.e) { try {
+		res.locals.email = decode(req.query.e, config.tokenKey);
+	} catch (e) { } }
 
-app.use(route.get('/unsubscribe', api.unsubscribe));
-app.use(route.get('/bounce', api.bounce));
-app.use(route.get('/complaint', api.complaint));
-app.use(route.get('/open', api.open));
-app.use(route.get('/click', api.click));
+	next();
+});
 
-app.use(require('koa-static')(
-	require('path').join(__dirname, 'public')
-));
+app.use(routes);
 
-app.listen(3000);
+app.listen(3000, () => console.log('Listening at http://localhost:3000'));

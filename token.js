@@ -35,18 +35,21 @@ function expiry(days) {
 	return Math.round(new Date(Date.now() + days * 86.4E6).getTime() / 1000);
 }
 
-function encode(sub, exp, key) {
+function encode(sub, days, key) {
 	const
+		exp = expiry(days),
 		msg = Buffer.concat([
 			Buffer.alloc(4, exp.toString(16), 'hex'),
 			Buffer.from(sub)
 		]),
-		hmac = crypto.createHmac('sha224', key).update(msg).digest(),
 		cipher = crypto.createCipher('aes-256-gcm', key),
 		cip = cipher.update(msg, null, 'base64') + cipher.final('base64'),
 		tag = cipher.getAuthTag().toString('base64');
 
-	return cip.replace(/\=+$/, '') + '.' + tag.replace(/\=+$/, '');
+	return (cip + '.' + tag)
+		.replace(/\=+$/, '')
+		.replace(/\+/g, '-')
+		.replace(/\//g, '_');
 }
 
 function decode(enc, key) {

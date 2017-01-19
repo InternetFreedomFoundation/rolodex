@@ -24,7 +24,7 @@ const
 		secret: config.awsSecretAccessKey,
 		amazon: `https://email.${config.awsSesRegion}.amazonaws.com`
 	}),
-	pg = new (require('pg').native.Pool)({
+	pg = new (require('pg').Client)({
 		host: config.pgHostname,
 		user: config.pgUsername,
 		password: config.pgPassword,
@@ -32,20 +32,23 @@ const
 	}),
 	mailPath = `${__dirname}/mailings/${process.argv[2] || 'test'}`,
 	mailConfig = require(mailPath),
+	token = require('./token'),
 	render = require('handlebars').compile(
 		require('fs').readFileSync(`${mailPath}.hbs`, 'utf8')
-	);
+	),
+	start = process.hrtime();
 
 console.log(`Mailing: ${mailPath}`);
 
 function readBatch(client) {
 	return new Promise((resolve, reject) => {
 		client.query(
-			'SELECT * FROM emails WHERE NOT done ORDER BY id ASC LIMIT $1',
+			`SELECT * FROM emails
+			 WHERE enabled AND NOT done
+			 ORDER BY id ASC LIMIT $1`,
 			[config.batchSize],
 			(err, result) => {
 				if (err) { return reject(err); }
-				console.log(`Read ${result.rows.length} rows`);
 				resolve(result.rows);
 			}
 		);
@@ -59,7 +62,6 @@ function markDone(client, first, last) {
 			[first, last],
 			(err, result) => {
 				if (err) { return reject(err); }
-				console.log(`Marked ${result.rowCount} rows done`);
 				resolve();
 			}
 		);
@@ -67,11 +69,13 @@ function markDone(client, first, last) {
 }
 
 function renderEmail(row) {
+	row.token = token.encode(row.id, 30, config.tokenKey);
 	return {
 		to: config.env === 'prod' ? row.id : config.devMailTo,
 		from: mailConfig.from,
 		subject: mailConfig.subject,
-		message: render(row)
+		message: render(row),
+		altText: render(row)
 	};
 }
 
@@ -79,14 +83,16 @@ function sendEmail(email) {
 	return new Promise((resolve, reject) => {
 		ses.sendEmail(email, (err, data) => {
 			if (err) return reject(err);
-			console.log(`Sent to ${email.to}`);
+			console.log(process.hrtime(start), `Sent to ${email.to}`);
 			resolve();
 		});
 	});
 }
 
 function processBatches(client, i) {
-	let first, last, complete;
+	let
+		hrt = process.hrtime(),
+		first, last, complete;
 
 	return 	readBatch(client)
 	.then(rows => {
@@ -95,29 +101,27 @@ function processBatches(client, i) {
 		last = rows[rows.length - 1].id;
 
 		return Promise.all(rows.map(row => {
-			console.log(`Start ${row.id}`);
 			return sendEmail(renderEmail(row));
 		}));
 	})
 	.then(() => markDone(client, first, last))
 	.then(() => {
-		console.log(complete, i);
-		!complete && i > 1 && processBatches(client, i - 1)
+		console.log(process.hrtime(start), `Batch ${i} complete`);
+		return !complete && i > 1 && processBatches(client, i - 1);
 	});
 }
 
-pg.connect((err, client, done) => {
+pg.connect((err) => {
 	if (err) { return console.err('PG Connect Error', err); }
-	console.log('Connected to database.');
-	const start = process.hrtime();
+	console.log(process.hrtime(start), 'Connected to database.');
 
-	processBatches(client, config.numBatches)
+	processBatches(pg, config.numBatches)
 	.then(() => {
-		console.log('Done', process.hrtime(start));
-		done();
+		console.log(process.hrtime(start), 'Mailing done');
+		return pg.end();
 	})
 	.catch(err => {
 		console.log('Error', err);
-		done();
+		return pg.end();
 	});
 });

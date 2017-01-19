@@ -23,41 +23,62 @@
 
 const
 	config = require('./config'),
-	pg = new (require('pg').native.Pool)({
+	router = require('express').Router(),
+	pg = new (require('pg').Pool)({
 		host: config.pgHostname,
 		user: config.pgUsername,
 		password: config.pgPassword,
 		database: config.pgDatabase
 	});
 
-exports.unsubscribe = function * unsubscribe (next) {
-	yield next;
-	pg.query('UPDATE emails SET enabled=false WHERE id=$1', [this.query.email]);
-};
+router.get('/unsubscribe', (req, res, next) => {
+	if (!res.locals.email) {
+		return res.status(201).render('page', {
+			title: 'Unauthorized',
+			body: 'Maybe the link you clicked is very old?'
+		});
+	}
 
-exports.bounce = function * bounce (next) {
-	yield next;
-	pg.query('UPDATE emails SET enabled=false WHERE id=$1', [this.query.email]);
-};
+	pg.query(
+		'UPDATE emails SET enabled=false WHERE id=$1',
+		[res.locals.email]
+	)
+	.then(() => {
+		res.render('page', {
+			title: 'Unsubscribed',
+			body: `We won’t email ${res.locals.email} anymore.`
+		});
+	})
+	.catch (err => {
+		res.status(500).render('page', {
+			title: 'Internal Server Error',
+			body: 'We couldn’t unsubscribe you. ☹'
+		});
+	});
+});
 
-exports.complaint = function * complaint (next) {
-	yield next;
-	pg.query('UPDATE emails SET enabled=false WHERE id=$1', [this.query.email]);
-};
+router.get('/bounce', (req, res, next) => {
+	pg.query('UPDATE emails SET enabled=false WHERE id=$1', [res.query.email]);
+});
 
-exports.open = function * open (next) {
-	yield next;
+router.get('/complaint', (req, res, next) => {
+	pg.query('UPDATE emails SET enabled=false WHERE id=$1', [res.query.email]);
+});
+
+router.get('/open', (req, res, next) => {
 	pg.query(
 		'INSERT INTO events(email, type) VALUES ($1, \'open\')',
-		[this.query.email]
+		[res.locals.email]
 	);
-};
+});
 
-exports.click = function * click (next) {
+router.get('/click', (req, res, next) => {
 	this.status = 301;
 	this.response.set('Location', this.query.r);
 	pg.query(
 		'INSERT INTO events(email, type) VALUES ($1, \'click\')',
-		[this.query.email]
+		[res.locals.email]
 	);
-};
+});
+
+module.exports = router;

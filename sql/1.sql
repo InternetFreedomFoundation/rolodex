@@ -3,8 +3,9 @@ DROP TABLE IF EXISTS events;
 
 CREATE TABLE emails (
 	id text PRIMARY KEY,
-	tags text[],
-	data jsonb,
+	enabled boolean NOT NULL DEFAULT true,
+	tags text[] NOT NULL DEFAULT '{}',
+	data jsonb NOT NULL DEFAULT '{}',
 	done boolean NOT NULL DEFAULT false
 );
 
