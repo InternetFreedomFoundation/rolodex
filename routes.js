@@ -22,6 +22,7 @@
 */
 
 const
+	crypto = require('crypto'),
 	config = require('./config'),
 	router = require('express').Router(),
 	pg = new (require('pg').Pool)({
@@ -73,12 +74,48 @@ router.get('/open', (req, res, next) => {
 });
 
 router.get('/click', (req, res, next) => {
-	this.status = 301;
-	this.response.set('Location', this.query.r);
+	res.redirect(301, this.query.r);
 	pg.query(
 		'INSERT INTO events(email, type) VALUES ($1, \'click\')',
 		[res.locals.email]
 	);
+});
+
+router.get('/razorpay', (req, res, next) => {
+	console.log(req.body);
+	let body, sign = req.get('X-Razorpay-Signature');
+	console.log('Signature', sign);
+	try {
+		body = JSON.parse(req.body);
+	} catch (e) {
+		res.status(400).end('Bad request');
+		return next();
+	}
+
+	switch(body.event) {
+		case 'payment.authorized':
+		const {
+			id,
+			amount,
+			currency,
+			method,
+			email,
+			contact
+		} = body.payload.payment.entity;
+		pg.query(
+			'INSERT INTO events(email, type, data) VALUES ($1, \'donate\', $2)',
+			[email, JSON.stringify({ amount, contact })]
+		);
+		request.post(`${config.rpOrigin}/payment/${id}/`, {
+			auth: {
+				user: config.rpUsername,
+				pass: config.rpPassword
+			},
+			form: {amount}
+		});
+	}
+
+	res.status(200).end('Ok');
 });
 
 module.exports = router;
