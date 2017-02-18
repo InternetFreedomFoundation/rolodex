@@ -22,7 +22,7 @@ const
 	{ urlTrackingPixel } = require('../config');
 
 module.exports = function (req, res) {
-	res.redirect(301, urlTrackingPixel)
+	res.redirect(307, urlTrackingPixel)
 	saveEvent({
 		type: 'email.open',
 		tags: [res.locals.address, res.locals.campaign],

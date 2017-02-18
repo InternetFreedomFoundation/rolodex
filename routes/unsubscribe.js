@@ -25,6 +25,6 @@ const
 module.exports = function (req, res) {
 
 	saveContact({ address: res.locals.address, state: 'unsubscribed' })
-	.then(() => res.redirect(301, urlUnsubscribed))
+	.then(() => res.redirect(307, urlUnsubscribed))
 	.catch(sendError(res));
 };

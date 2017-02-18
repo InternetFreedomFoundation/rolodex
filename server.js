@@ -30,7 +30,7 @@ const
 	{ decode } = require('./token'),
 	app = express();
 
-app.use(morgan());
+app.use(morgan('combined'));
 app.use(bodyParser.json());
 
 app.use((req, res, next) => {
