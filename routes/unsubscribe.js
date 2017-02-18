@@ -17,25 +17,14 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-/*
-	api.js - HTTP endpoints
+const
+	saveContact = require('../lib/saveContact'),
+	sendError = require('../lib/sendError'),
+	{ urlUnsubscribed } = require('../config');
 
-	/r Redirecting URLs, requires signed token, typically from email
+module.exports = function (req, res) {
 
-*/
-
-const router = require('express').Router();
-
-router.get('/r/verify', require('./routes/verify'));
-router.get('/r/unsubscribe', require('./routes/unsubscribe'));
-router.get('/r/open', require('./routes/open'));
-router.get('/r/click', require('./routes/click'));
-
-router.post('/w/subscribe', require('./routes/subscribe'));
-router.post('/w/petition', require('./routes/petition'));
-
-router.use('/s/bounce', require('./routes/sesWebhook'));
-router.use('/s/complaint', require('./routes/sesWebhook'));
-router.use('/s/razorpay', require('./routes/rpWebhook'));
-
-module.exports = router;
+	saveContact({ address: res.locals.address, state: 'unsubscribed' })
+	.then(() => res.redirect(301, urlUnsubscribed))
+	.catch(sendError(res));
+};

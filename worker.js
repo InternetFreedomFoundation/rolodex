@@ -19,17 +19,8 @@
 
 const
 	config = require('./config'),
-	ses = require('node-ses').createClient({
-		key: config.awsAccessKeyId,
-		secret: config.awsSecretAccessKey,
-		amazon: `https://email.${config.awsSesRegion}.amazonaws.com`
-	}),
-	pg = new (require('pg').Client)({
-		host: config.pgHostname,
-		user: config.pgUsername,
-		password: config.pgPassword,
-		database: config.pgDatabase
-	}),
+	ses = require('./lib/ses'),
+	pg = require('./lib/pg'),
 	mailPath = `${__dirname}/mailings/${process.argv[2] || 'test'}`,
 	mailConfig = require(mailPath),
 	token = require('./token'),

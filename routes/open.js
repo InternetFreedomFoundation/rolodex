@@ -17,29 +17,17 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-/*
-	index.js - Webserver
-*/
-
 const
-	config = require('./config'),
-	express = require('express'),
-	expressHandlebars = require('express-handlebars'),
-	app = express(),
-	routes = require('./routes'),
-	{ decode } = require('./token');
+	saveEvent = require('../lib/saveEvent'),
+	{ urlTrackingPixel } = require('../config');
 
-app.engine('hbs', expressHandlebars());
-app.set('view engine', 'hbs');
-
-app.use((req, res, next) => {
-	if (req.query.e) { try {
-		res.locals.email = decode(req.query.e, config.tokenKey);
-	} catch (e) { } }
-
-	next();
-});
-
-app.use(routes);
-
-app.listen(3000, () => console.log('Listening at http://localhost:3000'));
+module.exports = function (req, res) {
+	res.redirect(301, urlTrackingPixel)
+	saveEvent({
+		type: 'email.open',
+		tags: [res.locals.address, res.locals.campaign],
+		data: {
+			// TODO: Location, browser etc.
+		}
+	});
+};

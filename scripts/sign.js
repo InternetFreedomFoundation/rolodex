@@ -17,25 +17,26 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-/*
-	api.js - HTTP endpoints
+/* eslint-disable no-console */
 
-	/r Redirecting URLs, requires signed token, typically from email
+const
+	{ encode } = require('../token'),
+	{ tokenKey: key } = require('../config'),
+	args = process.argv;
 
-*/
+if (args.length < 3) {
+	console.log(`Usage: node sign.js <data>`);
+	process.exit();
+}
 
-const router = require('express').Router();
+if (args.length === 3) {
+	console.log(encode(args[2], 1, key));
+	process.exit();
+}
 
-router.get('/r/verify', require('./routes/verify'));
-router.get('/r/unsubscribe', require('./routes/unsubscribe'));
-router.get('/r/open', require('./routes/open'));
-router.get('/r/click', require('./routes/click'));
-
-router.post('/w/subscribe', require('./routes/subscribe'));
-router.post('/w/petition', require('./routes/petition'));
-
-router.use('/s/bounce', require('./routes/sesWebhook'));
-router.use('/s/complaint', require('./routes/sesWebhook'));
-router.use('/s/razorpay', require('./routes/rpWebhook'));
-
-module.exports = router;
+const data = {};
+for (let i = 2; i < args.length; i += 2) {
+	data[args[i]] = args[i + 1];
+}
+console.log('Data', data);
+console.log(encode(JSON.stringify(data), 1, key));

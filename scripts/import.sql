@@ -17,25 +17,16 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-/*
-	api.js - HTTP endpoints
+CREATE TEMPORARY TABLE csv_import ( name text, email text );
+\copy csv_import(name, email) FROM '../../list.csv' delimiter ',' csv header;
 
-	/r Redirecting URLs, requires signed token, typically from email
-
-*/
-
-const router = require('express').Router();
-
-router.get('/r/verify', require('./routes/verify'));
-router.get('/r/unsubscribe', require('./routes/unsubscribe'));
-router.get('/r/open', require('./routes/open'));
-router.get('/r/click', require('./routes/click'));
-
-router.post('/w/subscribe', require('./routes/subscribe'));
-router.post('/w/petition', require('./routes/petition'));
-
-router.use('/s/bounce', require('./routes/sesWebhook'));
-router.use('/s/complaint', require('./routes/sesWebhook'));
-router.use('/s/razorpay', require('./routes/rpWebhook'));
-
-module.exports = router;
+INSERT INTO contacts(type, address, data)
+	SELECT
+		'email',
+		email AS address,
+		CASE WHEN name IS NULL THEN '{}'
+		ELSE jsonb_build_object('name', name)::jsonb
+		END AS data
+	FROM csv_import
+	WHERE email IS NOT NULL AND email <> ''
+ON CONFLICT DO NOTHING;

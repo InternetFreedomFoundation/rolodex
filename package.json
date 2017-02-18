@@ -1,14 +1,30 @@
 {
   "name": "mailer",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "server.js",
   "license": "MIT",
   "dependencies": {
+    "body-parser": "^1.16.1",
     "express": "^4.14.0",
-    "express-handlebars": "^3.0.0",
     "handlebars": "^4.0.6",
+    "morgan": "^1.8.1",
     "node-ses": "^2.0.2",
-    "request": "x",
-    "pg": "^6.1.2"
+    "pg": "^6.1.2",
+    "pg-native": "^1.10.0",
+    "request": "x"
+  },
+  "devDependencies": {
+    "eslint": "^3.15.0"
+  },
+  "eslintConfig": {
+    "extends": "eslint:recommended",
+    "parserOptions": {
+      "ecmaVersion": 2015,
+      "impliedStrict": true
+    },
+    "env": {
+      "node": true,
+      "es6": true
+    }
   }
 }

@@ -56,12 +56,15 @@ function decode(enc, key) {
 	const
 		[ cip, tag ] = enc.split('.'),
 		decipher = crypto.createDecipher('aes-256-gcm', key);
-		decipher.setAuthTag(Buffer.from(tag, 'base64')),
-		msg = Buffer.concat([
-			decipher.update(cip, 'base64'),
-			decipher.final()
-		]),
-		exp = msg.readUInt32BE(0),
+
+	decipher.setAuthTag(Buffer.from(tag, 'base64'));
+
+	const msg = Buffer.concat([
+		decipher.update(cip, 'base64'),
+		decipher.final()
+	]);
+	
+	const exp = msg.readUInt32BE(0),
 		sub = msg.toString('utf8', 4);
 
 	if (exp < expiry(0)) throw(Error('Token expired'));
