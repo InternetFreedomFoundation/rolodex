@@ -64,8 +64,8 @@ CREATE TABLE contacts (
 	data jsonb NOT NULL DEFAULT '{}', -- name, designation, organization
 	created timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	toggled timestamp, -- last state change to/from 'subscribed'
-	sent timestamp     -- last outgoing communication (email)
-	seen timestamp,    -- last incoming activity
+	sent timestamp,    -- last outgoing communication (email)
+	seen timestamp     -- last incoming activity
 );
 
 CREATE UNIQUE INDEX contacts_by_address
