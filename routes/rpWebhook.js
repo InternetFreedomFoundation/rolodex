@@ -17,56 +17,119 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-/* TODO: Implement fully */
-/* eslint-disable no-unused-vars */
+/* eslint-disable no-console */
 
 const
-	request = require('request'),
+	fetch = require('node-fetch'),
+	saveContact = require('../lib/saveContact'),
 	saveEvent = require('../lib/saveEvent'),
 	sendError = require('../lib/sendError'),
-	{ rpOrigin, rpUsername, rpPassword } = require('../config');
+	{ rpOrigin, rpKeyId, rpKeySecret } = require('../config');
 
-function verifySignature(body, sign) {
+function verifySignature() {
 	// TODO: Implement to prevent CSRF.
 	return true;
+}
+
+function btoa(str) {
+	return Buffer.from(str).toString('base64');
 }
 
 function handleAuthorize(body) {
 	const {
 		id,
 		amount,
-		currency,
-		method,
 		email,
 		contact: phone,
 	} = body.payload.payment.entity;
 
-	return saveEvent('donate', [email], {})
+	return Promise.all([
+		saveContact({
+			type: 'email',
+			address: email,
+			tags: ['donate.complete']
+		}),
+		saveContact({
+			type: 'phone',
+			address: phone,
+			tags: ['donate.complete']
+		}),
+		saveEvent({
+			type: 'action.complete',
+			tags: [email, 'donate'],
+			data: body.payload.payment.entity
+		})
+	])
 	/* Capture the Payment */
-	.then(() => request.post(`${rpOrigin}/payment/${id}/`, {
-		auth: {
-			user: rpUsername,
-			pass: rpPassword
+	.then(() => fetch(`${rpOrigin}/payments/${id}/capture`, {
+		method: 'post',
+		headers: {
+			'Authorization': 'Basic ' + btoa(rpKeyId + ':' + rpKeySecret),
+			'Content-Type': 'application/x-www-form-urlencoded'
 		},
-		form: {amount}
-	}));
+		body: `amount=${amount}`
+	}))
+	.then(response => response.json())
+	.then(res => {
+		if (res.error) {
+			console.log(`ECAPTURE ${res.error.code} ${res.error.description}`);
+			throw Error(res.error.code);
+		}
+		if (res.status !== 'captured') {
+			console.log(`ECAPTURE ${res.status}`);
+			throw Error(res.status);
+		}
+		console.log(`Payment Captured: ${id}`);
+	});
 }
 
-module.exports = (req, res, next) => {
-	let body, sign = req.get('X-Razorpay-Signature');
+function handleFailure(body) {
+	const {
+		email,
+		contact: phone,
+	} = body.payload.payment.entity;
 
-	try {
-		if (!verifySignature(req.body, sign)) throw Error();
-		body = JSON.parse(req.body);
-	} catch (e) {
-		res.status(400).end('Bad request');
-		return next();
+	return Promise.all([
+		saveContact({
+			type: 'email',
+			address: email,
+			tags: ['donate.start']
+		}),
+		saveContact({
+			type: 'phone',
+			address: phone,
+			tags: ['donate.start']
+		}),
+		saveEvent({
+			type: 'action.complete',
+			tags: [email, 'donate'],
+			data: body.payload.payment.entity
+		})
+	]);
+}
+
+module.exports = (req, res) => {
+	let
+		body = req.body,
+		sign = req.get('X-Razorpay-Signature');
+
+	if (!verifySignature(body, sign)) {
+		console.log('EVERIFY', body, sign);
+		res.write(200).end('Bad Request: Signature verification failed.');
+		return;
 	}
 
 	switch(body.event) {
 	case 'payment.authorized':
+		console.log(`Payment Authorized ${body.payload.payment.entity.id}`);
 		handleAuthorize(body)
 		.then(() => res.end('Ok'))
 		.catch(sendError(res));
+		return;
+	case 'payment.failed':
+		console.log(`Payment Failed ${body.payload.payment.entity.id}`);
+		handleFailure(body);
+		res.end('Ok');
+		return;
 	}
 };

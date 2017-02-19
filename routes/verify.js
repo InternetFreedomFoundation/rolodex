@@ -23,7 +23,6 @@ const
 	{ urlVerified } = require('../config');
 
 module.exports = function (req, res) {
-	console.log('Verify');
 	saveContact({ address: res.locals.address, state: 'subscribed' })
 	.then(() => res.redirect(307, urlVerified))
 	.catch(sendError(res));

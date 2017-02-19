@@ -8,6 +8,7 @@
     "express": "^4.14.0",
     "handlebars": "^4.0.6",
     "morgan": "^1.8.1",
+    "node-fetch": "^1.6.3",
     "node-ses": "^2.0.2",
     "pg": "^6.1.2",
     "pg-native": "^1.10.0",
