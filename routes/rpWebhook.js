@@ -41,7 +41,10 @@ function handleAuthorize(body) {
 		amount,
 		email,
 		contact: phone,
+		captured
 	} = body.payload.payment.entity;
+
+	if (captured) return Promise.resolve(true);
 
 	return Promise.all([
 		saveContact({
