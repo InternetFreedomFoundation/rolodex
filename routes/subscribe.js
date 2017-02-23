@@ -19,10 +19,17 @@
 
 const
 	saveContact = require('../lib/saveContact'),
+	sendEmail = require('../lib/sendEmail')('simple', 'verify', true),
 	sendError = require('../lib/sendError');
 
 module.exports = function (req, res) {
 	saveContact(req.body)
+	.then(contact => sendEmail({
+		to: res.locals.address,
+		from: '"Internet Freedom Foundation"<team@internetfreedom.in>',
+		subject: 'Verify your email',
+		data: contact
+	}))
 	.then(() => res.end('Ok'))
 	.catch(sendError(res));
 };

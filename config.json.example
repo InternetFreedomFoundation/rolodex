@@ -1,8 +1,14 @@
 {
 	"env": "dev",
-	"devMailTo": "me@example.com",
+	"testAddress": "me@example.com",
 
-	"origin": "https://rolodex.example.com",
+	"base": "https://rolodex.example.com",
+	"port": 3000,
+
+	"urlUnsubscribed": "",
+	"urlVerified": "",
+	"urlTrackingPixel": "",
+	"urlInternalError": "",
 
 	"awsAccessKeyId": "",
 	"awsSecretAccessKey": "",
@@ -16,5 +22,13 @@
 	"batchSize": 5,
 	"numBatches": 1,
 
-	"tokenKey": "hush, this is a secret"
+	"tokenKey": "hush, this is a secret",
+	"tokenValidityEmail": 7,
+	"tokenValidityCookie": 365,
+
+	"rpBase": "https://api.razorpay.com/v1",
+	"rpKeyId": "rzp_test_XXXXXXXXXXXXXX",
+	"rpKeySecret": "XXXXXXXXXXXXXXXXXXXXXXXX",
+	"rpSigningSecret": "hush, this is a secret"
+
 }

@@ -27,7 +27,7 @@ const
 	bodyParser = require('body-parser'),
 	config = require('./config'),
 	routes = require('./routes'),
-	{ decode } = require('./token'),
+	{ decode } = require('./lib/token'),
 	app = express();
 
 app.use(morgan('combined'));
@@ -56,6 +56,6 @@ app.use(routes);
 app.listen(
 	config.port,
 	() => console.log( // eslint-disable-line no-console
-		`HTTP Server Started: ${config.origin}/`
+		`HTTP Server Started: ${config.base}/`
 	)
 );

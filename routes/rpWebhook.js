@@ -24,7 +24,7 @@ const
 	saveContact = require('../lib/saveContact'),
 	saveEvent = require('../lib/saveEvent'),
 	sendError = require('../lib/sendError'),
-	{ rpOrigin, rpKeyId, rpKeySecret } = require('../config');
+	{ rpBase, rpKeyId, rpKeySecret } = require('../config');
 
 function verifySignature() {
 	// TODO: Implement to prevent CSRF.
@@ -64,7 +64,7 @@ function handleAuthorize(body) {
 		})
 	])
 	/* Capture the Payment */
-	.then(() => fetch(`${rpOrigin}/payments/${id}/capture`, {
+	.then(() => fetch(`${rpBase}/payments/${id}/capture`, {
 		method: 'post',
 		headers: {
 			'Authorization': 'Basic ' + btoa(rpKeyId + ':' + rpKeySecret),

@@ -20,7 +20,9 @@
 /*
 	api.js - HTTP endpoints
 
-	/r Redirecting URLs, requires signed token, typically from email
+	/r Redirecting routes, requires signed token, typically from email
+	/w XHR routes, token optional, typically from the web
+	/s Server-to-server calls (webhooks), no token expected.
 
 */
 
