@@ -1,3 +1,4 @@
+#!/usr/bin/node
 /*
 	Rolodex, high-performance email list software.
 
@@ -20,7 +21,7 @@
 /* eslint-disable no-console */
 
 const
-	{ encode } = require('../token'),
+	{ encode } = require('../lib/token'),
 	{ tokenKey: key } = require('../config'),
 	args = process.argv;
 
@@ -30,7 +31,7 @@ if (args.length < 3) {
 }
 
 if (args.length === 3) {
-	console.log(encode(args[2], 1, key));
+	console.log(encode(args[2], 7, key));
 	process.exit();
 }
 

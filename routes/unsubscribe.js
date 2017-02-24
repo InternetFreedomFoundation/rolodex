@@ -20,7 +20,7 @@
 const
 	saveContact = require('../lib/saveContact'),
 	sendError = require('../lib/sendError'),
-	sendEmail = require('../lib/sendEmail')('simple', 'unsubscribe', true),
+	sendEmail = require('../lib/sendEmail')('unsubscribe'),
 	{ urlUnsubscribed } = require('../config');
 
 module.exports = function (req, res) {
@@ -29,9 +29,7 @@ module.exports = function (req, res) {
 		res.redirect(307, urlUnsubscribed);
 		return sendEmail({
 			to: res.locals.address,
-			from: '"Internet Freedom Foundation"<team@internetfreedom.in>',
-			subject: 'Unsubscribed',
-			data: contact
+			contact
 		});
 	})
 	.catch(sendError(res));

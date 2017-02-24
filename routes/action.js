@@ -20,21 +20,31 @@
 const
 	saveContact = require('../lib/saveContact'),
 	saveEvent = require('../lib/saveEvent'),
-	sendError = require('../lib/sendError');
+	sendError = require('../lib/sendError'),
+	emailSender = require('../lib/sendEmail'),
+	sendEmail = {};
 
 module.exports = function (req, res) {
 	let {
 		email,
 		phone,
-		contactTags,
+		campaign,
+		state,
 		contactData,
-		eventTags,
 		eventData
 	} = req.body;
 
+	const
+		campaignState = campaign + '.' + state,
+		eventTags = [ campaign, campaignState ],
+		contactTags = [ campaign, campaignState ];
+
 	if (!email && !phone) throw Error('Neither email nor phone provided');
-	if (email) eventTags.push(email);
-	if (phone) eventTags.push(phone);
+	if (email) eventTags.push('email:' + email);
+	if (phone) eventTags.push('phone:' + phone);
+
+	if (!sendEmail[campaignState])
+		sendEmail[campaignState] = emailSender(campaignState);
 
 	Promise.all([
 		email && saveContact({
@@ -55,6 +65,9 @@ module.exports = function (req, res) {
 			data: eventData
 		})
 	])
-	.then(() => res.end('Ok'))
+	.then(([contact]) => {
+		sendEmail[campaignState]({ to: email, contact });
+		res.end('Ok')
+	})
 	.catch(sendError(res));
 };

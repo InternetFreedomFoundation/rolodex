@@ -19,7 +19,7 @@
 
 const
 	saveContact = require('../lib/saveContact'),
-	sendEmail = require('../lib/sendEmail')('simple', 'welcome', true),
+	sendEmail = require('../lib/sendEmail')('welcome'),
 	sendError = require('../lib/sendError'),
 	{ urlVerified } = require('../config');
 
@@ -27,9 +27,7 @@ module.exports = function (req, res) {
 	saveContact({ address: res.locals.address, state: 'subscribed' })
 	.then(contact => sendEmail({
 		to: res.locals.address,
-		from: '"Internet Freedom Foundation"<team@internetfreedom.in>',
-		subject: 'Welcome!',
-		data: contact
+		contact
 	}))
 	.then(() => res.redirect(307, urlVerified))
 	.catch(sendError(res));

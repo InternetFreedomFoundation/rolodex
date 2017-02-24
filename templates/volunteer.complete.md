@@ -1,11 +1,11 @@
 ---
 from: '"Internet Freedom Foundation"<team@internetfreedom.in>'
-subject: Welcome!
+subject: Welcome to the team!
 layout: simple
 ---
 Hi, {{contacts.data.name}}
 
-Thank you for subscribing to be an Internet Freedom Foundation member!
+Thank you for volunteering with Internet Freedom Foundation member!
 
 [Unsubscribe]({{urls.unsubscribe}}) (Don't.)
 
