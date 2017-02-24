@@ -65,8 +65,8 @@ module.exports = function (req, res) {
 			data: eventData
 		})
 	])
-	.then(([contact]) => {
-		sendEmail[campaignState]({ to: email, contact });
+	.then(([contact, _, event]) => { // eslint-disable-line no-unused-vars
+		sendEmail[campaignState]({ to: email, contact, event });
 		res.end('Ok')
 	})
 	.catch(sendError(res));
