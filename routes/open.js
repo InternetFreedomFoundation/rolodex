@@ -25,7 +25,7 @@ module.exports = function (req, res) {
 	res.redirect(307, urlTrackingPixel)
 	saveEvent({
 		type: 'email.open',
-		tags: [res.locals.address, res.locals.campaign],
+		tags: [req.tracker.address, req.tracker.campaign],
 		data: {
 			// TODO: Location, browser etc.
 		}

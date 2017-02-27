@@ -24,6 +24,8 @@ DROP TYPE IF EXISTS ContactType;
 DROP TYPE IF EXISTS ContactState;
 DROP TYPE IF EXISTS EventType;
 DROP TYPE IF EXISTS JobType;
+DROP TYPE IF EXISTS JobState;
+
 
 CREATE TYPE ContactType AS ENUM('email', 'phone');
 CREATE TYPE ContactState AS ENUM(
@@ -41,6 +43,7 @@ CREATE TYPE EventType AS ENUM(
 	'action.complete'
 );
 CREATE TYPE JobType AS ENUM('email', 'sms');
+CREATE TYPE JobState AS ENUM('stopped', 'started', 'aborted', 'ended');
 
 /*
 	All tables use a UUID primary key, which will have V1 UUIDs (timestamp-based) to ensure monotonic ordering. This allows sequential access in ID order (for processing bulk jobs) to roughly follow the heap layout.
@@ -90,12 +93,14 @@ ON events USING gin(tags);
 
 CREATE TABLE jobs (
 	id serial PRIMARY KEY,
-	type JobType NOT NULL,
+	type JobType NOT NULL DEFAULT 'email',
+	state JobState NOT NULL DEFAULT 'stopped',
 	data jsonb NOT NULL DEFAULT '{}',
-	mark uuid,
+	mark integer NOT NULL DEFAULT 0,
+	priority smallint NOT NULL DEFAULT 50,
 	started timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-	ended timestamp
+	updated timestamp
 );
 
-CREATE INDEX jobs_ongoing_by_type
-ON jobs(type) WHERE ended IS NULL;
+CREATE INDEX jobs_running_by_priority
+ON jobs(type, priority DESC) WHERE state = 'started';

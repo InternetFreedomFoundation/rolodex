@@ -24,9 +24,9 @@ const
 	{ urlVerified } = require('../config');
 
 module.exports = function (req, res) {
-	saveContact({ address: res.locals.address, state: 'subscribed' })
+	saveContact({ address: req.tracker.address, state: 'subscribed' })
 	.then(contact => sendEmail({
-		to: res.locals.address,
+		to: req.tracker.address,
 		contact
 	}))
 	.then(() => res.redirect(307, urlVerified))

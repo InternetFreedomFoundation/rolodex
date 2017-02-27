@@ -18,101 +18,93 @@
 */
 
 const
-	config = require('./config'),
-	ses = require('./lib/ses'),
+	{ batchSize, idleTimeout } = require('./config'),
+	emailSender = require('./lib/sendEmail'),
+	sendEmail = {},
 	pg = require('./lib/pg'),
-	mailPath = `${__dirname}/mailings/${process.argv[2] || 'test'}`,
-	mailConfig = require(mailPath),
-	token = require('./token'),
-	render = require('handlebars').compile(
-		require('fs').readFileSync(`${mailPath}.hbs`, 'utf8')
-	),
 	start = process.hrtime();
 
-console.log(`Mailing: ${mailPath}`);
-
-function readBatch(client) {
-	return new Promise((resolve, reject) => {
-		client.query(
-			`SELECT * FROM emails
-			 WHERE enabled AND NOT done
-			 ORDER BY id ASC LIMIT $1`,
-			[config.batchSize],
-			(err, result) => {
-				if (err) { return reject(err); }
-				resolve(result.rows);
-			}
+function emailBatch(data, mark) {
+	const
+		{ campaign } = data,
+		send = sendEmail[campaign] || (
+			sendEmail[campaign] = emailSender(campaign)
 		);
-	});
-}
 
-function markDone(client, first, last) {
-	return new Promise((resolve, reject) => {
-		client.query(
-			'UPDATE emails SET done=true WHERE id>=$1 AND id<=$2',
-			[first, last],
-			(err, result) => {
-				if (err) { return reject(err); }
-				resolve();
-			}
-		);
-	});
-}
+	console.log('DO_EMAIL', data, mark);
 
-function renderEmail(row) {
-	row.token = token.encode(row.id, 30, config.tokenKey);
-	return {
-		to: config.env === 'prod' ? row.id : config.devMailTo,
-		from: mailConfig.from,
-		subject: mailConfig.subject,
-		message: render(row),
-		altText: render(row)
-	};
-}
+	return pg.query(
+		`SELECT * FROM contacts WHERE type='email' AND id > $1
+		ORDER BY id ASC LIMIT $2`,
+		[ mark, batchSize ]
+	)
+	.then(result => {
+		mark = result.rows.length === batchSize &&
+			result.rows[result.rows.length - 1].id;
 
-function sendEmail(email) {
-	return new Promise((resolve, reject) => {
-		ses.sendEmail(email, (err, data) => {
-			if (err) return reject(err);
-			console.log(process.hrtime(start), `Sent to ${email.to}`);
-			resolve();
-		});
-	});
-}
+		console.log('BATCH', result.rows);
 
-function processBatches(client, i) {
-	let
-		hrt = process.hrtime(),
-		first, last, complete;
-
-	return 	readBatch(client)
-	.then(rows => {
-		complete = rows.length < config.batchSize;
-		first = rows[0].id;
-		last = rows[rows.length - 1].id;
-
-		return Promise.all(rows.map(row => {
-			return sendEmail(renderEmail(row));
-		}));
+		return Promise.all(result.rows.map(contact => send({
+			to: contact.address,
+			campaign: campaign,
+			campaignData: data,
+			contact
+		})));
 	})
-	.then(() => markDone(client, first, last))
-	.then(() => {
-		console.log(process.hrtime(start), `Batch ${i} complete`);
-		return !complete && i > 1 && processBatches(client, i - 1);
+	.then(() => mark);
+}
+
+const workers = {
+	email: emailBatch,
+	sms: () => {}
+};
+
+function work() {
+	let jobId, more;
+
+	console.log('START BATCH');
+
+	pg.query(
+		`SELECT * FROM jobs WHERE state='started'
+		ORDER BY priority DESC LIMIT 2`
+	)
+	.then(result => {
+		if (!result.rows.length) {
+			console.log('NO JOBS');
+			more = false;
+			return null;
+		}
+
+		const { id, type, data, mark } = result.rows[0];
+		jobId = id;
+		more = result.rows.length > 1;
+		console.log(`${process.hrtime(start)} BEGIN ${data.campaign}[${mark}`);
+
+		return workers[type](data, mark);
+	})
+	.then(mark => {
+		// mark will be null if this is the last batch of this job
+		more = more || mark;
+
+		console.log(`${process.hrtime(start)} FINISH ${mark}`);
+
+		if(mark) { return pg.query(
+			`UPDATE jobs SET mark=$1, updated=NOW() WHERE id=$2`,
+			[ mark, jobId ]
+		); } else { return pg.query(
+			`UPDATE jobs SET mark=0, state='ended', updated=NOW()
+			WHERE id=$1`,
+			[ jobId ]
+		); }
+	})
+	.then(() => more ? process.nextTick(work) : setTimeout(work, idleTimeout))
+	.catch(error => {
+		console.error('ERROR', jobId, error);
+		pg.query(
+			`UPDATE jobs SET state='aborted', updated=NOW() WHERE id=$1`,
+			[ jobId ]
+		)
 	});
 }
 
-pg.connect((err) => {
-	if (err) { return console.err('PG Connect Error', err); }
-	console.log(process.hrtime(start), 'Connected to database.');
-
-	processBatches(pg, config.numBatches)
-	.then(() => {
-		console.log(process.hrtime(start), 'Mailing done');
-		return pg.end();
-	})
-	.catch(err => {
-		console.log('Error', err);
-		return pg.end();
-	});
-});
+work();

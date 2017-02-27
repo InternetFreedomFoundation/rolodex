@@ -24,11 +24,11 @@ const
 	{ urlUnsubscribed } = require('../config');
 
 module.exports = function (req, res) {
-	saveContact({ address: res.locals.address, state: 'unsubscribed' })
+	saveContact({ address: req.tracker.address, state: 'unsubscribed' })
 	.then((contact) => {
 		res.redirect(307, urlUnsubscribed);
 		return sendEmail({
-			to: res.locals.address,
+			to: req.tracker.address,
 			contact
 		});
 	})

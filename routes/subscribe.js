@@ -25,7 +25,7 @@ const
 module.exports = function (req, res) {
 	saveContact(req.body)
 	.then(contact => sendEmail({
-		to: res.locals.address,
+		to: req.tracker.address,
 		contact
 	}))
 	.then(() => res.end('Ok'))

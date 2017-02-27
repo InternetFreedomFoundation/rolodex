@@ -25,27 +25,45 @@ const
 	express = require('express'),
 	morgan = require('morgan'),
 	bodyParser = require('body-parser'),
-	config = require('./config'),
+	cookieParser = require('cookie-parser'),
+	RateLimit = require('express-rate-limit'),
+	{ base, port, tokenValidityCookie } = require('./config'),
+	dayMs = 86.4E6,
 	routes = require('./routes'),
-	{ decode } = require('./lib/token'),
+	{ encode, decode } = require('./lib/token'),
 	app = express();
 
 app.use(morgan('combined'));
+app.use(new RateLimit({ windowMs: 120000, max: 25, delayMs: 0 }));
+app.use(cookieParser());
 app.use(bodyParser.json());
 
 app.use((req, res, next) => {
+	req.tracker = {};
+
 	if (req.query.t) { try {
-		const { a, c, r } = JSON.parse(decode(req.query.t, config.tokenKey));
-		if(a) res.locals.address  = a;
-		if(c) res.locals.campaign = c;
-		if(r) res.locals.redirect = r;
+		const { a, c, r } = JSON.parse(decode(req.query.t));
+		if (a) req.tracker.address  = a;
+		if (c) req.tracker.campaign = c;
+		if (r) req.tracker.redirect = r;
 	} catch (e) { /* do nothing */ } }
+
+	if (req.cookies.t) { try {
+		req.tracker.oldAddress = JSON.parse(decode(req.cookies.t)).a;
+	} catch (e) { /* do nothing */ } }
+
+	if (req.tracker.address) {
+		res.cookie('t', encode(
+			JSON.stringify({ a: req.tracker.address }),
+			tokenValidityCookie
+		), { maxAge: tokenValidityCookie * dayMs });
+	}
 
 	next();
 });
 
 app.use('/r/', (req, res, next) => {
-	if (!res.locals.address) {
+	if (!req.tracker.address) {
 		return res.status(401).end('Unauthorized');
 	}
 	next();
@@ -53,9 +71,12 @@ app.use('/r/', (req, res, next) => {
 
 app.use(routes);
 
+// TODO: Move error handling to an error middleware.
+// TODO: Link contacts when address !== oldAddress
+
 app.listen(
-	config.port,
+	port,
 	() => console.log( // eslint-disable-line no-console
-		`HTTP Server Started: ${config.base}/`
+		`HTTP Server Started: ${base}/`
 	)
 );

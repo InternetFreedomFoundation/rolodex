@@ -21,10 +21,10 @@ const
 	saveEvent = require('../lib/saveEvent');
 
 module.exports = function (req, res) {
-	res.redirect(307, res.locals.redirect)
+	res.redirect(307, req.tracker.redirect)
 	saveEvent({
 		type: 'email.click',
-		tags: [res.locals.address, res.locals.campaign, res.locals.redirect],
+		tags: [req.tracker.address, req.tracker.campaign, req.tracker.redirect],
 		data: {
 			// TODO: Location, browser, etc.
 		}
