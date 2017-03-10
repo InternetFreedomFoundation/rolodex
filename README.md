@@ -15,9 +15,11 @@ psql -U rolodex -h localhost < scripts/1.sql
 npm install
 ```
 
+If you are a volunteer with IFF, check #tech on slack for a config.json using shared credentials. Otherwise, copy config.json.example and change the values — you will need to set up an Amazon SES account and a Razorpay account for the relevant features to work correctly.
+
 ### Start
 
-```
+```sh
 node server.js &
 node worker.js &
 ```
@@ -30,7 +32,7 @@ There are three tables
 - **Events**, which is an insert-only log of events, mostly campaign-related things like petition signatures and email opens.
 - **Jobs**, which stores scheduled, ongoing an completed jobs for the worker.
 
-The Schema is 
+Look at scripts/1.sql to learn more.
 
 ### Server
 
@@ -39,7 +41,11 @@ Handles three types of requests:
 - **JSON APIs** under /x/, they are called from campaign pages for saving data.
 - **Webhooks**  under /s/, they are called from other servers (RazorPay, Amazon).
 
-Most 
+Each route are defined in a file under routes/ and included in routes.js. Most of them use the pg library to write some values into the database; Some also use sendEmail to send out emails.
+
+### Sending Email
+
+TODO: Document this.
 
 ### How to contribute
 
