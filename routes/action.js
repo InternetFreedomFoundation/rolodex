@@ -30,8 +30,7 @@ module.exports = function (req, res) {
 		phone,
 		campaign,
 		state,
-		contactData,
-		eventData
+		contact
 	} = req.body;
 
 	const
@@ -51,18 +50,18 @@ module.exports = function (req, res) {
 			type: 'email',
 			address: email,
 			tags: contactTags,
-			data: contactData
+			data: contact
 		}),
 		phone && saveContact({
 			type: 'phone',
 			address: phone,
 			tags: contactTags,
-			data: contactData
+			data: contact
 		}),
 		saveEvent({
 			type: 'action.complete',
 			tags: eventTags,
-			data: eventData
+			data: req.body
 		})
 	])
 	.then(([contact, _, event]) => { // eslint-disable-line no-unused-vars

@@ -34,7 +34,7 @@ router.get('/r/open', require('./routes/open'));
 router.get('/r/click', require('./routes/click'));
 
 router.post('/w/subscribe', require('./routes/subscribe'));
-router.post('/w/act', require('./routes/action'));
+router.post('/w/:action', require('./routes/action'));
 
 router.use('/s/bounce', require('./routes/sesWebhook'));
 router.use('/s/complaint', require('./routes/sesWebhook'));
