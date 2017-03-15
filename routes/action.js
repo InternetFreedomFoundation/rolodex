@@ -66,7 +66,11 @@ module.exports = function (req, res) {
 	])
 	.then(([contact, _, event]) => { // eslint-disable-line no-unused-vars
 		sendEmail[campaignState]({ to: email, contact, event });
-		res.end('Ok')
+		if (req.body.redirect) {
+			res.redirect(307, req.body.redirect);
+		} else {
+			res.end('Ok');
+		}
 	})
 	.catch(sendError(res));
 };
