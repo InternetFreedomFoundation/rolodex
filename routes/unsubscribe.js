@@ -26,7 +26,7 @@ const
 module.exports = function (req, res) {
 	saveContact({ address: req.tracker.address, state: 'unsubscribed' })
 	.then((contact) => {
-		res.redirect(307, urlUnsubscribed);
+		res.redirect(303, urlUnsubscribed);
 		return sendEmail({
 			to: req.tracker.address,
 			contact

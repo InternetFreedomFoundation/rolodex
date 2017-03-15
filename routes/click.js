@@ -21,7 +21,7 @@ const
 	saveEvent = require('../lib/saveEvent');
 
 module.exports = function (req, res) {
-	res.redirect(307, req.tracker.redirect)
+	res.redirect(303, req.tracker.redirect)
 	saveEvent({
 		type: 'email.click',
 		tags: [req.tracker.address, req.tracker.campaign, req.tracker.redirect],

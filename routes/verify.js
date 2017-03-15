@@ -29,6 +29,6 @@ module.exports = function (req, res) {
 		to: req.tracker.address,
 		contact
 	}))
-	.then(() => res.redirect(307, urlVerified))
+	.then(() => res.redirect(303, urlVerified))
 	.catch(sendError(res));
 };
